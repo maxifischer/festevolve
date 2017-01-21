@@ -25,28 +25,30 @@ st = datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d %H:%M:%S')
 print(st)
 
 progressbar.draw(count, maxsize, 30)
-
-while pq and count < maxsize:
-	first = False
-	currentArtist = pq.pop()
-	r = requests.get('https://api.spotify.com/v1/artists/' + currentArtist + '/related-artists', auth = ())
-	
-	#print(r)
-	for i in r.json()['artists']:
-		artist_name = i['name'].encode('ascii','ignore')
-		if artist_name not in all_artists:
-			#print(i['name'])
-			pq.append(i['id'])
-			all_artists.add(artist_name)		
-			G.add_node(i['id'])
-		G.add_edge(currentArtist, i['id'])
-	
-		#save graph in execution
-		#if (count % 100) == 0:
-		#	nx.write_adjlist(G, 'graph' + str(count) + '.txt')
-	
-	count += 1
-	progressbar.redraw(count, maxsize, 30)
+try:
+	while pq and count < maxsize:
+		first = False
+		currentArtist = pq.pop()
+		r = requests.get('https://api.spotify.com/v1/artists/' + currentArtist + '/related-artists', auth = ())
+		
+		#print(r)
+		for i in r.json()['artists']:
+			artist_name = i['name'].encode('ascii','ignore')
+			if artist_name not in all_artists:
+				#print(i['name'])
+				pq.append(i['id'])
+				all_artists.add(artist_name)		
+				G.add_node(i['id'])
+			G.add_edge(currentArtist, i['id'])
+		
+			#save graph in execution
+			#if (count % 100) == 0:
+			#	nx.write_adjlist(G, 'graph' + str(count) + '.txt')
+		
+		count += 1
+		progressbar.redraw(count, maxsize, 30)
+except (KeyboardInterrupt, SystemExit):
+	print "Aborting after " + str(count) + " entries"
 #print(all_artists)
 st = datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d %H:%M:%S')
 print(st)
