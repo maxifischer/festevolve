@@ -1,0 +1,136 @@
+%!TEX root = proposal.tex
+% Packages
+\usepackage[show]{chato-notes}
+\usepackage{url}
+\usepackage{hyperref}
+\usepackage{graphicx}
+\usepackage{multirow}
+\usepackage{amssymb}
+\usepackage{amsmath}
+\usepackage{centernot}
+% avoid conflicts
+\let\proof\relax
+\let\endproof\relax
+\usepackage{amsthm}
+\usepackage{algorithm}
+\usepackage{algorithmicx}
+\usepackage[noend]{algpseudocode}
+\usepackage{enumerate}
+\usepackage[dvipsnames]{xcolor}
+\usepackage{colortbl}
+\usepackage[style=base]{caption}
+\usepackage{subcaption}
+\usepackage{comment}
+\usepackage{balance}
+\usepackage{cite} %citations are ordered by number
+\usepackage[tikz]{bclogo}
+\usepackage[normalem]{ulem}
+\usepackage{tikz}
+\usepackage{nccmath}
+\usepackage{enumitem}
+\usepackage{balance}
+\usepackage{rotating}
+\usepackage{pifont}
+\usepackage[margin=2cm]{geometry}
+\usepackage{etoolbox} % Patch the bibliography title
+\usepackage[noindentafter]{titlesec}
+
+\usetikzlibrary{decorations.markings}
+%%
+%% The next line says how the "vertex" style of nodes should look: drawn as small circles.
+\tikzstyle{vertex}=[circle, draw, inner sep=0pt, minimum size=4pt, fill=black]
+\newcommand{\vertex}{\node[vertex]}
+
+
+\hypersetup{
+%    bookmarks=true,         % show bookmarks bar?
+    unicode=false,          % non-Latin characters in Acrobats bookmarks
+    pdftoolbar=true,        % show Acrobats toolbar?
+    pdfmenubar=true,        % show Acrobats menu?
+    pdffitwindow=false,     % window fit to page when opened
+    pdfstartview={FitH},    % fits the width of the page to the window
+    pdftitle={My title},    % title
+    pdfauthor={Author},     % author
+    pdfsubject={Subject},   % subject of the document
+    pdfcreator={Creator},   % creator of the document
+    pdfproducer={Producer}, % producer of the document
+    pdfnewwindow=true,      % links in new window
+    colorlinks=true,       % false: boxed links; true: colored links
+    linkcolor=black,          % color of internal links
+    citecolor=black,        % color of links to bibliography
+    filecolor=black,      % color of file links
+    urlcolor=black,           % color of external links
+}
+
+
+
+\newcommand*{\graphpair}[2]{\langle #1, #2 \rangle}
+\newcommand*{\tuple}[1]{(#1_1, ..., #1_n)}
+\newcommand*{\range}[3]{#1 = #2 ... #3}
+\newcommand*{\pair}[2]{(#1,#2)}
+\newcommand*{\triple}[3]{(#1,#2,#3)}
+\newcommand*{\edge}[4]{#1 \overset{#3}{#4} #2}
+\newcommand*{\uedge}[2]{\edge{#1}{#2}{}{--}}
+\newcommand*{\dedge}[2]{\edge{#1}{#2}{}{\rightarrow}}
+\newcommand*{\luedge}[3]{\edge{#1}{#2}{#3}{--}}
+\newcommand*{\ldedge}[3]{\edge{#1}{#2}{#3}{\rightarrow}}
+\newcommand*{\expgname}[1]{#1^+}
+\newcommand*{\expgraph}[3]{\expgname{#1}:\graphpair{#2^+}{#3^+}}
+
+
+%Paper macros
+
+
+
+%Style macros
+\renewcommand\abstractname{Summary}
+%\patchcmd{\thebibliography}{\section*}{\section}{}{}
+\renewcommand{\refname}{Bibliography}
+
+%% Work package styles (DO NOT touch)
+\renewcommand\theparagraph{\Alph{paragraph}}
+\renewcommand\thesubparagraph{[\Alph{paragraph}\arabic{subparagraph}]}
+\titleformat{\paragraph}{\normalfont\large\bfseries}{\theparagraph}{1em}{}
+\titleformat{\subparagraph}{\normalfont\normalsize\bfseries}{\thesubparagraph}{1em}{}
+\titlespacing*{\subparagraph}{0pt}{3.25ex plus 1ex minus .2ex}{1.25ex plus .1ex}
+\newcommand{\workpack}{\paragraph}
+\newcommand{\subworkpack}{\subparagraph}
+
+\setcounter{secnumdepth}{5}
+
+%Algorithmic macros
+\renewcommand{\algorithmicrequire}{\textbf{Input:}}
+\renewcommand{\algorithmicensure}{\textbf{Output:}}
+\renewcommand{\algorithmicforall}{\textbf{for each}}
+\algdef{SE}[DOWHILE]{Do}{DoWhile}{\algorithmicdo}[1]{\algorithmicwhile\ #1}%
+
+%Complexity macros
+\newcommand*{\NP}{$\mathbf{NP}$}
+\newcommand*{\NPhard}{$\mathbf{NP}$-hard}
+\newcommand*{\NPcomplete}{$\mathbf{NP}$-complete}
+\newcommand*{\SPcomplete}{$\mathbf{\#P}$-complete}
+\newcommand*{\SPhard}{$\mathbf{\#P}$-hard}
+\newcommand*{\bigO}{\mathcal{O}}
+
+% Paragraphs
+\newcommand{\spara}[1]{\smallskip\noindent{\bf #1}}
+\newcommand{\mpara}[1]{\medskip\noindent{\bf #1}}
+\newcommand{\para}[1]{\noindent{\bf #1}}
+
+\newcommand{\blackBox}{$\blacksquare$}
+
+
+
+\newcommand{\removed}[1]{
+  \colorbox{red!30}{{\scriptsize REMOVED}}
+  {\color{red}#1}
+}
+
+\newcommand{\del}[1]{
+  {\color{red}\sout{#1}}
+}
+
+
+\newcommand{\added}[1]{
+{\color{ForestGreen}#1}
+}

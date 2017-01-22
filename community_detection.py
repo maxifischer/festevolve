@@ -6,11 +6,96 @@ import time
 import datetime
 import matplotlib.pyplot as plt
 from operator import itemgetter
+import operator
+import random
+import pickle
 
 # small data set
 G = nx.read_adjlist('graph1000.txt')
 # big data set
 #G = nx.read_adjlist('graph105315.txt')
+
+
+#clustering coefficient
+trials = 1000
+n = len(G)
+triangles = 0
+nodes = G.nodes()
+for i in [int(random.random() * n) for i in range(trials)]:
+    nbrs = list(G[nodes[i]])
+    if len(nbrs) < 2:
+        continue
+    u, v = random.sample(nbrs, 2)
+    if u in G[v]:
+        triangles += 1
+print(triangles / float(trials))
+
+
+
+
+def getGenreOfArtists(artist_list):
+	req_string = 'https://api.spotify.com/v1/artists?ids='
+	for artist in artist_list:
+		req_string = req_string + artist + ','
+	req_string = req_string[:-1]
+	r = requests.get(req_string, auth = ())
+	genres = {}
+	for artist in r.json()['artists']:
+		if len(artist['genres']) != 0:
+			for genre in artist['genres']:
+				if genre in genres:
+					genres[genre] += 1
+				else:
+					genres[genre] = 1	
+	return genres
+
+# dumb genre prediction per max count of genres in neighborhood
+queue = []
+genre_artist = {}
+for elem in nx.nodes(G):
+	inp = []
+	inp.append(elem)
+	genre =  getGenreOfArtists(inp)
+	if genre:
+		genre_artist[elem] = genre
+	else:
+		neighbors = G.neighbors(elem)
+		genres = getGenreOfArtists(neighbors)
+		if genres:
+			genre_artist[elem] = max(genres.iteritems(), key=operator.itemgetter(1))[0]
+		else:
+			queue.append(elem)
+count = 0
+while queue and count < 100:
+	elem = random.choice(queue)
+	inp = []
+	inp.append(elem)
+	genre =  getGenreOfArtists(inp)
+	if genre:
+		genre_artist[elem] = genre
+		queue.remove(elem)
+		count = 0
+	else:
+		neighbors = G.neighbors(elem)
+		genres = getGenreOfArtists(neighbors)
+		if genres:
+			genre_artist[elem] = max(genres.iteritems(), key=operator.itemgetter(1))[0]
+			queue.remove(elem)
+			count = 0
+		else:
+			count += 1
+			print(count)
+# delete elements when there are no neighbors with genres
+if count == 100:
+	for i in queue:
+		G.remove_node(i)
+with open('genres.pkl', 'wb') as f:
+    pickle.dump(genre_artist, f, pickle.HIGHEST_PROTOCOL)
+
+with open('obj/' + name + '.pkl', 'rb') as f:
+    artistsWithGenres = pickle.load(f)
+print(artistsWithGenres[artistsWithGenres.keys()[0]])
+print(artistsWithGenres.iterkeys().next())
 
 # find communities base on k-cliques
 #k_cliques = list(nx.k_clique_communities(G, 13))
@@ -18,12 +103,9 @@ G = nx.read_adjlist('graph1000.txt')
 # ask for all artist names of clique/community & print it
 def print_community(k_cliques):
 	for elem in k_cliques:
-		req_string = 'https://api.spotify.com/v1/artists?ids='
-		for node in elem:
-			req_string = req_string + node + ','
-		req_string = req_string[:-1]
-		r = requests.get(req_string, auth = ())
-		genres = {}
+		inp = []
+		inp.append(elem)
+		genres = getGenreOfArtists(inp)
 		for artist in r.json()['artists']:
 			if len(artist['genres']) != 0:
 				for genre in artist['genres']:
@@ -35,7 +117,7 @@ def print_community(k_cliques):
 		print('-----------------------------')
 
 # example code for extracting biggest hub for an egonet (node with all neighbors and edges between them)
-#node_and_degree=G.degree()
+node_and_degree=G.degree()
 #(largest_hub,degree)=sorted(node_and_degree.items(),key=itemgetter(1))[-100]
 # Create ego graph of main hub
 #hub_ego=nx.ego_graph(G,largest_hub)
