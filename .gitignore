@@ -1,0 +1,4 @@
+artist.txt
+graph.txt
+*.pyc
+build_graph.sh
