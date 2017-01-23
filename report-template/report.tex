@@ -36,15 +36,23 @@ Spotify is a music streaming platform, hosting over 30 million songs and more th
 Because the related artists have to be queried one-by-one from the Spotify API we are only using a subset of the complete graph. Our subgraph is constructed by starting at an arbitrary artist (we chose the red hot chili peppers) and then using breadth first traversal. The total number of nodes in the subgraph is 50733, the number of edges is X. The 'related artist' relation goes both ways, so its an undirected graph.
 We can assume that in reality the graph is dynamic, because new songs and thus artists will be added all the time.
 
-Report the main characteristics of the dataset (or datasets) that you used. This includes: number of nodes, number of edges, whether directed/undirected graph, static/dynamic graph, number of node/edge labels (if labeled), presence of ground truth (e.g., communities, classes to learn ...), degree distribution.
+Degree Distribution: insert graph here
 
-[Optionally] You can report more fine grained information, such as the number of connected components in the graph, the size of the largest/smallest connected component, the diameter, the number of triangles.
+TODO: diameter, number of triangles
+
+The artist nodes contain various information, such as genre and popularity.
 
 \section{Description of the algorithm}
+
+Ego-things here
 
 Briefly describe in your own words the algorithm or the algorithm(s) you used in terms of input and output, which kind of network it applies to, and what is the main idea behind it (three sentences). Reference the algorithm (e.g.,\cite{zhao2007graph})
 
 \section{Preprocessing and storing}
+
+In order to obtain the graph we queried the Spotify API at \cite{spotifyapi}. The related artist query returns 20 artists that are related to the given input artist.
+From there we continued with breadth first traversal and queried the API for all the new artists. The graph is stored directly in main memory using python with networkx.
+The nodes are named by the artists id on spotify, which is returned by the API.
 
 Report all the preprocessing steps to obtain the final network. How do you store the data (graph database, main memory, disk)? In which format? Did you have to remove some information in order to clean the data? 
 
