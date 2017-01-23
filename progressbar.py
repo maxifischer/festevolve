@@ -7,6 +7,10 @@ def clear(lines):
 		sys.stdout.write("\033[K") #clear line
 
 def draw(actual, target, width):
+	if target <= 0:
+		print actual
+		return
+
 	bar = "< "
 	percent = actual/(target*1.0)
 	for i in range(width):

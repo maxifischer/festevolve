@@ -15,7 +15,7 @@
 \date{Due date: 24 January 2017}
 
 \author{
-[First-name-1] [Last-name-1], [First-name-2] [Last-name-2]\\ 
+Maxi Fischer, S\"oren Tietb\"ohl\\ 
 }
 
 
@@ -25,11 +25,16 @@
 
 % - Summary of the project
 \begin{abstract}
-Brief description of the project: used network and the performed analysis. 
+Analysis of the Spotify Artist Network using an ego-based community detection algorithm.
 \end{abstract}
 
 
 \section{Summary of the data}
+
+Spotify is a music streaming platform, hosting over 30 million songs and more than 2 million artists. The artists are associated with each other via the 'related artists' feature. This relation induces a graph, which is the subject of this project.
+
+Because the related artists have to be queried one-by-one from the Spotify API we are only using a subset of the complete graph. Our subgraph is constructed by starting at an arbitrary artist (we chose the red hot chili peppers) and then using breadth first traversal. The total number of nodes in the subgraph is 50733, the number of edges is X. The 'related artist' relation goes both ways, so its an undirected graph.
+We can assume that in reality the graph is dynamic, because new songs and thus artists will be added all the time.
 
 Report the main characteristics of the dataset (or datasets) that you used. This includes: number of nodes, number of edges, whether directed/undirected graph, static/dynamic graph, number of node/edge labels (if labeled), presence of ground truth (e.g., communities, classes to learn ...), degree distribution.
 

@@ -2,3 +2,11 @@ artist.txt
 graph.txt
 *.pyc
 build_graph.sh
+
+# latex build files
+
+*.out
+*.tex.bak
+*.synctex.gz
+*.log
+*.aux

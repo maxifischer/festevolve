@@ -69,6 +69,7 @@ try:
 		all_responses = batchrequest.get(urls)
 		
 		max_retry = 0
+		reauth = False
 		for response in all_responses:
 			# reconstuct the artist from the url
 			currentArtist = response.request.url.split('/')[-2] # -2 means second-last element
@@ -77,6 +78,10 @@ try:
 				waittime = int(response.headers["Retry-After"])
 				if waittime > max_retry:
 					max_retry = waittime
+				pq.append(currentArtist)
+				continue
+			elif response.code == 401:
+				reauth = True
 				pq.append(currentArtist)
 				continue
 			elif response.code != 200:
@@ -99,6 +104,9 @@ try:
 			progressbar.clear(1)
 			max_retry = 0
 
+		if reauth:
+			batchrequest.getAuth(clientid,clientsecret)
+
 		progressbar.redraw(count, maxsize, 30)
 except (KeyboardInterrupt, SystemExit):
 	print "Aborting after " + str(count) + " entries"
@@ -106,6 +114,8 @@ except RequestException as e:
 	details = e.args[0]
 	print "Request Error, Status was " + str(details["code"])
 	print details["reason"]
+except batchrequest.AuthFail as e:
+	print e
 #print(all_artists)
 st = datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d %H:%M:%S')
 print(st)
