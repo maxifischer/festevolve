@@ -12,6 +12,8 @@ import pickle
 #sudo pip install python-louvain
 import community
 
+#real data set
+#G = nx.read_adjlist('graph_report.txt')
 # small data set
 G = nx.read_adjlist('graph1000.txt')
 # big data set
@@ -89,7 +91,29 @@ def get_genre_tuple(genres):
 # find communities base on k-cliques
 # TODO: more community algos
 
+# Girvan-Newman
+# print('girvan-newman')
+# path_graph = nx.path_graph(nx.nodes(G))
+# girvan_iter = nx.girvan_newman(path_graph)
+
+# for currPart in girvan_iter:
+# 	artists = get_genre_of_artists(currPart)
+# 	print(len(currPart), get_genre_tuple(artists))
+# print('-----------------------------')
+
+
+# Asynchronous LPA communities
+# print('asynchronous LPA communities')
+# lpa_comm = nx.asyn_lpa_communities(G)
+
+# for currPart in lpa_comm:
+# 	artists = get_genre_of_artists(currPart)
+# 	print(len(currPart), get_genre_tuple(artists))
+# print('-----------------------------')
+
+
 # Louvain algo
+print('Louvain algo')
 partition = community.best_partition(G)
 partition_dict = {}
 for key in partition:
@@ -100,15 +124,16 @@ for key in partition:
 for part in partition_dict:
 	artists = get_genre_of_artists(partition_dict[part])
 	print(len(partition_dict[part]), get_genre_tuple(artists))
-
+print('-----------------------------')
 
 # k-clique_communities
-k_cliques = list(nx.k_clique_communities(G,2))
+print('k-clique-communities')
+k_cliques = list(nx.k_clique_communities(G,3))
 
 for k_clique in k_cliques:
 	artists = get_genre_of_artists(k_clique)
 	print(len(k_clique), get_genre_tuple(artists))
-
+print('-----------------------------')
 
 
 
