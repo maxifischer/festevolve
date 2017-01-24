@@ -15,38 +15,26 @@ import community
 #real data set
 #G = nx.read_adjlist('graph_report.txt')
 # small data set
-G = nx.read_adjlist('graph1000.txt')
+G = nx.read_adjlist('graph_report.txt')
 # big data set
 #G = nx.read_adjlist('graph105315.txt')
 
 def get_genre_of_artists(artist_list):
 	req_string = 'https://api.spotify.com/v1/artists'
-	#for artist in artist_list:
-	#	req_string = req_string + artist + ','
-	#req_string = req_string[:-1]
+
 	genres = {}
 	genres['null'] = 0
 	# maximum 50 ids
 	artist_list = list(artist_list)
-	while len(artist_list) > 51:
+	while artist_list:
+		artist_batch = ""
 		for artist in artist_list[0:50]:
-			r = requests.get(req_string, params={'ids': artist}, auth = ())
-			#print(r.json())	
-			for artist in r.json()['artists']:
-				if len(artist['genres']) > 0:
-					for genre in artist['genres']:
-						if genre in genres:
-							genres[genre] += 1
-						else:
-							genres[genre] = 1
-				else:
-					genres['null'] += 1	
-		artist_list = artist_list[50:-1] 	
-	for artist in artist_list:
-		r = requests.get(req_string, params={'ids': artist}, auth = ())
-		#print(r.json())
+			artist_batch += artist + ","
+		artist_batch = artist_batch[:-1]
+		r = requests.get(req_string, params={'ids': artist_batch}, auth = ())
+		#print(r.json())	
 		for artist in r.json()['artists']:
-			if len(artist['genres']) > 0:
+			if artist['genres']:
 				for genre in artist['genres']:
 					if genre in genres:
 						genres[genre] += 1
@@ -54,6 +42,7 @@ def get_genre_of_artists(artist_list):
 						genres[genre] = 1
 			else:
 				genres['null'] += 1	
+		artist_list = artist_list[50:]
 	return genres
 
 def print_community(k_cliques):
@@ -80,13 +69,10 @@ def get_genre_tuple(genres):
 	genre_list.append(null_genre)
 	del genres['null']
 	sorted_genres = sorted(genres, key = lambda genre : genres[genre], reverse = True)
-	if len(sorted_genres) < 3:
-		genre_list.append(sorted_genres)
-	else:
-		for i in sorted_genres[:3]:
-			genre_list.append(genres[i])
+
+	for i in sorted_genres[:3]:
+		genre_list.append(genres[i])
 	return genre_list
-	
 
 # find communities base on k-cliques
 # TODO: more community algos
@@ -113,6 +99,8 @@ def get_genre_tuple(genres):
 
 
 # Louvain algo
+louvain = []
+
 print('Louvain algo')
 partition = community.best_partition(G)
 partition_dict = {}
@@ -123,8 +111,12 @@ for key in partition:
 		partition_dict[partition[key]] = []
 for part in partition_dict:
 	artists = get_genre_of_artists(partition_dict[part])
-	print(len(partition_dict[part]), get_genre_tuple(artists))
+	p = (len(partition_dict[part]), get_genre_tuple(artists))
+	print(p[0], p[1])
+	louvain.append(p)
 print('-----------------------------')
+
+kclique = []
 
 # k-clique_communities
 print('k-clique-communities')
@@ -132,8 +124,18 @@ k_cliques = list(nx.k_clique_communities(G,3))
 
 for k_clique in k_cliques:
 	artists = get_genre_of_artists(k_clique)
-	print(len(k_clique), get_genre_tuple(artists))
+	p = (len(k_clique), get_genre_tuple(artists))
+	print(p[0], p[1])
+	kclique.append(p)
 print('-----------------------------')
+
+with open("graph_communities.txt", 'wb') as output:
+	output.write("louvain\n")
+	for c in louvain:
+		output.write(str(c) + "\n")
+	output.write("\nkclique\n")
+	for c in kclique:
+		output.write(str(c) + "\n")
 
 
 
