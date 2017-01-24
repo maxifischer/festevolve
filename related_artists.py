@@ -41,12 +41,14 @@ pq = deque()
 all_artists = set()
 artists_info = {}
 G = nx.Graph()
-fetch_artist_info = []
 
 # example set upon Red Hot Chilli Peppers
 artist_id = u'0L8ExT028jH3ddEcZwqJJ5'
 pq.append(artist_id)
 all_artists.add(u'Red Hot Chili Peppers')
+r = requests.get('https://api.spotify.com/v1/artists/' + artist_id)
+artists_info[artist_id] = r.json()
+
 count = 0
 
 st = datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d %H:%M:%S')
@@ -89,32 +91,12 @@ try:
 			for artist in rjson['artists']:
 				if artist['id'] not in all_artists:
 					all_artists.add(artist['id'])
+					artists_info[artist['id']] = artist
 					pq.append(artist['id'])		
 					G.add_node(artist['id'])
 					fetch_artist_info += artist['id'] + ","
 				G.add_edge(currentArtist, artist['id'])
 		progressbar.redraw(count, maxsize, 30)
-
-	fetch_queries = []
-	api_url = 'https://api.spotify.com/v1/artists'
-	while fetch_artist_info:
-		fetch_string = ""
-		for artistid in fetch_artist_info[:50]:
-			fetch_string += artistid + ","
-		fetch_string = fetch_string[:-1]
-		fetch_queries.append((api_url,{"ids": fetch_string}))
-		fetch_artist_info = fetch_artist_info[50:]
-
-	while fetch_queries:
-		infos = batchrequest.get(fetch_queries[:batchsize], True)
-		fetch_queries = fetch_queries[batchsize:]
-		if response.code == 429 or response.code == 401:
-			fetch_queries.append((response.request.url, {}))
-		elif response.code != 200:
-			raise RequestException({"code": response.code, "reason": response.reason})
-		for response in infos:
-			for artist in json.loads(response.body):
-				artists_info[artist.id] = artist
 
 except (KeyboardInterrupt, SystemExit):
 	print "Aborting after " + str(count) + " entries"
