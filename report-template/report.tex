@@ -33,14 +33,12 @@ Analysis of the Spotify Artist Network using an ego-based community detection al
 
 Spotify is a music streaming platform, hosting over 30 million songs and more than 2 million artists. The artists are associated with each other via the 'related artists' feature. This relation induces a graph, which is the subject of this project.
 
-Because the related artists have to be queried one-by-one from the Spotify API we are only using a subset of the complete graph. Our subgraph is constructed by starting at an arbitrary artist (we chose the red hot chili peppers) and then using breadth first traversal. The total number of nodes in the subgraph is 50733, the number of edges is X. The 'related artist' relation goes both ways, so its an undirected graph.
-We can assume that in reality the graph is dynamic, because new songs and thus artists will be added all the time.
+Because the related artists have to be queried one-by-one from the Spotify API we are only using a subset of the complete graph. Our subgraph is constructed by starting at an arbitrary artist (we chose the "Red Hot Chili Peppers") and then using breadth first traversal. The total number of nodes in the subgraph is 50992, the number of edges is 179425. The 'related artist' relation goes both ways, so its an undirected graph. We can assume that in reality the graph is dynamic, because new songs and thus artists will be added all the time. The nodes are not labelled, but various information on the artist relation can be requested, such as genre and popularity.
 
-Degree Distribution: insert graph here
+Degree Distribution: 
+\includegraphics[scale=0.4]{spotify_degree_distribution.pdf}
 
-TODO: diameter, number of triangles
-
-The artist nodes contain various information, such as genre and popularity.
+The number of triangles is 913182. The average clustering coefficient is 0.2536.
 
 \section{Description of the algorithm}
 

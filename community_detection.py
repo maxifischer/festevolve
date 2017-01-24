@@ -9,103 +9,24 @@ from operator import itemgetter
 import operator
 import random
 import pickle
+#sudo pip install python-louvain
+import community
 
 # small data set
 G = nx.read_adjlist('graph1000.txt')
 # big data set
 #G = nx.read_adjlist('graph105315.txt')
 
-
-#clustering coefficient
-trials = 1000
-n = len(G)
-triangles = 0
-nodes = G.nodes()
-for i in [int(random.random() * n) for i in range(trials)]:
-    nbrs = list(G[nodes[i]])
-    if len(nbrs) < 2:
-        continue
-    u, v = random.sample(nbrs, 2)
-    if u in G[v]:
-        triangles += 1
-print(triangles / float(trials))
-
-
-
-
-def getGenreOfArtists(artist_list):
-	req_string = 'https://api.spotify.com/v1/artists?ids='
-	for artist in artist_list:
-		req_string = req_string + artist + ','
-	req_string = req_string[:-1]
-	r = requests.get(req_string, auth = ())
+def get_genre_of_artists(artist_list):
+	req_string = 'https://api.spotify.com/v1/artists'
+	#for artist in artist_list:
+	#	req_string = req_string + artist + ','
+	#req_string = req_string[:-1]
 	genres = {}
-	for artist in r.json()['artists']:
-		if len(artist['genres']) != 0:
-			for genre in artist['genres']:
-				if genre in genres:
-					genres[genre] += 1
-				else:
-					genres[genre] = 1	
-	return genres
-
-# dumb genre prediction per max count of genres in neighborhood
-queue = []
-genre_artist = {}
-for elem in nx.nodes(G):
-	inp = []
-	inp.append(elem)
-	genre =  getGenreOfArtists(inp)
-	if genre:
-		genre_artist[elem] = genre
-	else:
-		neighbors = G.neighbors(elem)
-		genres = getGenreOfArtists(neighbors)
-		if genres:
-			genre_artist[elem] = max(genres.iteritems(), key=operator.itemgetter(1))[0]
-		else:
-			queue.append(elem)
-count = 0
-while queue and count < 100:
-	elem = random.choice(queue)
-	inp = []
-	inp.append(elem)
-	genre =  getGenreOfArtists(inp)
-	if genre:
-		genre_artist[elem] = genre
-		queue.remove(elem)
-		count = 0
-	else:
-		neighbors = G.neighbors(elem)
-		genres = getGenreOfArtists(neighbors)
-		if genres:
-			genre_artist[elem] = max(genres.iteritems(), key=operator.itemgetter(1))[0]
-			queue.remove(elem)
-			count = 0
-		else:
-			count += 1
-			print(count)
-# delete elements when there are no neighbors with genres
-if count == 100:
-	for i in queue:
-		G.remove_node(i)
-with open('genres.pkl', 'wb') as f:
-    pickle.dump(genre_artist, f, pickle.HIGHEST_PROTOCOL)
-
-with open('obj/' + name + '.pkl', 'rb') as f:
-    artistsWithGenres = pickle.load(f)
-print(artistsWithGenres[artistsWithGenres.keys()[0]])
-print(artistsWithGenres.iterkeys().next())
-
-# find communities base on k-cliques
-#k_cliques = list(nx.k_clique_communities(G, 13))
-
-# ask for all artist names of clique/community & print it
-def print_community(k_cliques):
-	for elem in k_cliques:
-		inp = []
-		inp.append(elem)
-		genres = getGenreOfArtists(inp)
+	genres['null'] = 0
+	while len(artist_list) > 120:
+		r = requests.get(req_string, params={'ids': artist_list.keys()[0:120]}, auth = ())
+		artist_list = { curr_key: artist_list[curr_key] for curr_key in artist_list.keys()[120:-1] }	
 		for artist in r.json()['artists']:
 			if len(artist['genres']) != 0:
 				for genre in artist['genres']:
@@ -113,8 +34,109 @@ def print_community(k_cliques):
 						genres[genre] += 1
 					else:
 						genres[genre] = 1
+				else:
+					genres['null'] += 1
+	r = requests.get(req_string, params={'ids': artist_list}, auth = ())
+	for artist in r.json()['artists']:
+		if len(artist['genres']) != 0:
+			for genre in artist['genres']:
+				if genre in genres:
+					genres[genre] += 1
+				else:
+					genres[genre] = 1
+		else:
+			genres['null'] += 1		
+	return genres
+
+def print_community(k_cliques):
+	for elem in k_cliques:
+		inp = [elem]
+		genres = get_genre_of_artists(inp)
+		for genre in genres:
+			if genre in genres:
+				genres[genre] += 1
+			else:
+				genres[genre] = 1
 		print(genres)
 		print('-----------------------------')
+
+def get_genre_tuple(genres):
+	# TODO: count null values
+	null_genre = genres['null']
+	print(null_genre)
+	del genres['null']
+	sorted_genres = sorted(genres, reverse = True)	
+	# TODO: count value of genres
+	if len(sorted_genres) < 3:
+		print(sorted_genres)
+	else:
+		print(sorted_genres[0:3])
+	# TODO: get count of all artists
+	
+
+# find communities base on k-cliques
+# TODO: more community algos
+# TODO: play with the parameter
+k_cliques = list(nx.k_clique_communities(G, 6))
+#partition = community.best_partition(G)
+#print_community(partition)
+for k_clique in k_cliques:
+	artists = get_genre_of_artists(k_clique)
+	get_genre_tuple(artists)
+#TODO: code cleanup
+
+# dumb genre prediction per max count of genres in neighborhood
+# queue = []
+# genre_artist = {}
+# for elem in nx.nodes(G):
+# 	inp = []
+# 	inp.append(elem)
+# 	genre =  getGenreOfArtists(inp)
+# 	if genre:
+# 		genre_artist[elem] = genre
+# 	else:
+# 		neighbors = G.neighbors(elem)
+# 		genres = getGenreOfArtists(neighbors)
+# 		if genres:
+# 			genre_artist[elem] = max(genres.iteritems(), key=operator.itemgetter(1))[0]
+# 		else:
+# 			queue.append(elem)
+# count = 0
+# while queue and count < 100:
+# 	elem = random.choice(queue)
+# 	inp = []
+# 	inp.append(elem)
+# 	genre =  getGenreOfArtists(inp)
+# 	if genre:
+# 		genre_artist[elem] = genre
+# 		queue.remove(elem)
+# 		count = 0
+# 	else:
+# 		neighbors = G.neighbors(elem)
+# 		genres = getGenreOfArtists(neighbors)
+# 		if genres:
+# 			genre_artist[elem] = max(genres.iteritems(), key=operator.itemgetter(1))[0]
+# 			queue.remove(elem)
+# 			count = 0
+# 		else:
+# 			count += 1
+# 			print(count)
+# # delete elements when there are no neighbors with genres
+# if count == 100:
+# 	for i in queue:
+# 		G.remove_node(i)
+# with open('genres.pkl', 'wb') as f:
+#     pickle.dump(genre_artist, f, pickle.HIGHEST_PROTOCOL)
+
+# with open('obj/' + name + '.pkl', 'rb') as f:
+#     artistsWithGenres = pickle.load(f)
+# print(artistsWithGenres[artistsWithGenres.keys()[0]])
+# print(artistsWithGenres.iterkeys().next())
+
+
+
+# ask for all artist names of clique/community & print it
+
 
 # example code for extracting biggest hub for an egonet (node with all neighbors and edges between them)
 node_and_degree=G.degree()
@@ -131,14 +153,13 @@ node_and_degree=G.degree()
 
 
 # graph of egonets without the ego, so just the edges between the neighbors
-E = nx.Graph()
-degrees = sorted(node_and_degree.items(),key=itemgetter(1))
-for i in range(len(degrees)):
-	(hub, degree) = degrees[i]
-	E = nx.compose(E, nx.ego_graph(G, hub))
-
-cliques = list(nx.find_cliques(E))
-print_community(cliques)
+#E = nx.Graph()
+#degrees = sorted(node_and_degree.items(),key=itemgetter(1))
+#for i in range(len(degrees)):
+#	(hub, degree) = degrees[i]
+#	E = nx.compose(E, nx.ego_graph(G, hub))
+#cliques = list(nx.find_cliques(E))
+#print_community(cliques)
 
 # some stumps of finding max cliques in max cliques
 #H = nx.make_max_clique_graph(E)
@@ -161,28 +182,30 @@ print_community(cliques)
 # similarity measure for two nodes
 def friendship_score(G, v, w):
 	sum = 0
-	for u in nx.nodes(G):
-		neighbors = nx.all_neighbors(G, u)
-		if ((v in neighbors) and (w in neighbors)):
-			Z_u = nx.ego_graph(G, u, center=False)
-			if ((v in nx.nodes(Z_u)) and (w in nx.nodes(Z_u))):
-				sum += 1
+	V = nx.ego_graph(G, v)
+	V = nx.compose(V, nx.ego_graph(G, w))
+	for u in nx.nodes(V):
+		Z_u = nx.ego_graph(V, u, center=False)
+		cc = nx.connected_components(Z_u)
+		for comp in cc:
+			if v in comp:
+				if w in comp:
+					sum += 1
 	return sum
 
 # first attempt to use friendship score for clustering (just an array of scores right now)
 # takes time even for the small data set
-#all_nodes = list(nx.nodes(G))
-#friendship_scores = [ [0 for i in range(len(all_nodes))] for i in range(len(all_nodes))]
+# all_nodes = list(nx.nodes(G))
+# friendship_scores = [ [i for i in all_nodes] for j in all_nodes]
+# all_edges = list(nx.edges(G))
 
-#ego = nx.ego_graph(G, all_nodes[6], center = False)
+#ego = nx.ego_graph(G, all_nodes, center = False)
 #nx.draw(ego)
 #plt.savefig('ego.png')
 #plt.show()
-#for i in range(len(all_nodes)):
-#	for j in range(len(all_nodes)):
-#		if i != j:
-#			if friendship_scores[i][j] == 0: 
-#				score = friendship_score(G, all_nodes[i], all_nodes[j])
-#				friendship_scores[i][j] = score
-#				friendship_scores[j][i] = score
-#print(friendship_scores)
+# for i, j in all_edges:
+# 	if friendship_scores[i][j] == 0: 
+# 		score = friendship_score(G, i, j)
+# 		friendship_scores[i][j] = score
+# 		friendship_scores[j][i] = score
+# print(friendship_scores)
