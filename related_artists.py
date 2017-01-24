@@ -8,6 +8,7 @@ from collections import deque
 import progressbar
 import batchrequest
 import json
+import requests
 
 class RequestException(Exception):
 	pass
@@ -38,7 +39,9 @@ except:
 # list of artists to add
 pq = deque()
 all_artists = set()
+artists_info = {}
 G = nx.Graph()
+fetch_artist_info = []
 
 # example set upon Red Hot Chilli Peppers
 artist_id = u'0L8ExT028jH3ddEcZwqJJ5'
@@ -51,7 +54,7 @@ print(st)
 
 progressbar.draw(count, maxsize, 30)
 
-batchrequest.getAuth(clientid,clientsecret)
+batchrequest.setCredentials(clientid,clientsecret)
 
 try:
 	while pq and count < maxsize:
@@ -74,14 +77,7 @@ try:
 			# reconstuct the artist from the url
 			currentArtist = response.request.url.split('/')[-2] # -2 means second-last element
 
-			if response.code == 429:
-				waittime = int(response.headers["Retry-After"])
-				if waittime > max_retry:
-					max_retry = waittime
-				pq.append(currentArtist)
-				continue
-			elif response.code == 401:
-				reauth = True
+			if response.code == 429 or response.code == 401:
 				pq.append(currentArtist)
 				continue
 			elif response.code != 200:
@@ -91,23 +87,35 @@ try:
 			
 			rjson = json.loads(response.body)
 			for artist in rjson['artists']:
-				artist_name = artist['name'].encode('ascii','ignore')
-				if artist_name not in all_artists:
-					pq.append(artist['id'])
-					all_artists.add(artist_name)		
+				if artist['id'] not in all_artists:
+					all_artists.add(artist['id'])
+					pq.append(artist['id'])		
 					G.add_node(artist['id'])
+					fetch_artist_info += artist['id'] + ","
 				G.add_edge(currentArtist, artist['id'])
-
-		if max_retry > 0:
-			print "Got 429, waiting for " + str(max_retry) + " seconds"
-			time.sleep(max_retry)
-			progressbar.clear(1)
-			max_retry = 0
-
-		if reauth:
-			batchrequest.getAuth(clientid,clientsecret)
-
 		progressbar.redraw(count, maxsize, 30)
+
+	fetch_queries = []
+	api_url = 'https://api.spotify.com/v1/artists'
+	while fetch_artist_info:
+		fetch_string = ""
+		for artistid in fetch_artist_info[:50]:
+			fetch_string += artistid + ","
+		fetch_string = fetch_string[:-1]
+		fetch_queries.append((api_url,{"ids": fetch_string}))
+		fetch_artist_info = fetch_artist_info[50:]
+
+	while fetch_queries:
+		infos = batchrequest.get(fetch_queries[:batchsize], True)
+		fetch_queries = fetch_queries[batchsize:]
+		if response.code == 429 or response.code == 401:
+			fetch_queries.append((response.request.url, {}))
+		elif response.code != 200:
+			raise RequestException({"code": response.code, "reason": response.reason})
+		for response in infos:
+			for artist in json.loads(response.body):
+				artists_info[artist.id] = artist
+
 except (KeyboardInterrupt, SystemExit):
 	print "Aborting after " + str(count) + " entries"
 except RequestException as e:
@@ -126,9 +134,6 @@ print(len(all_artists))
 #file.write(json.dumps(H))
 #file.close()
 nx.write_adjlist(G, 'graph.txt')
-all_artists_sorted = list(all_artists)
-all_artists_sorted.sort()
 
 with open('artist.txt', 'wb') as artist_file:
-	for artist in all_artists_sorted:
-		artist_file.write(artist + "\n")
+	artist_file.write(str(artists_info))
