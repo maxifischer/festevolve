@@ -1,3 +1,4 @@
+from __future__ import division
 import networkx as nx
 from networkx.readwrite import json_graph
 import json
@@ -9,11 +10,13 @@ from operator import itemgetter
 import operator
 import random
 import pickle
-#sudo pip install python-louvain
 import community
+from collections import Counter
+import random
+
 
 #real data set
-#G = nx.read_adjlist('graph_report.txt')
+#G = nx.read_adjlist('graph1000.txt')
 # small data set
 G = nx.read_adjlist('graph_report.txt')
 # big data set
@@ -74,6 +77,39 @@ def get_genre_tuple(genres):
 		genre_list.append(genres[i])
 	return genre_list
 
+def asyn_lpa_communities(G, weight=None):
+    labels = {n: i for i, n in enumerate(G)}
+    cont = True
+    while cont:
+        cont = False
+        nodes = list(G)
+        random.shuffle(nodes)
+        # Calculate the label for each node
+        for node in nodes:
+            if len(G[node]) < 1:
+                continue
+
+            # Get label frequencies. Depending on the order they are processed
+            # in some nodes with be in t and others in t-1, making the
+            # algorithm asynchronous.
+            label_freq = Counter()
+            for v in G[node]:
+                label_freq.update({labels[v]: G.edge[v][node][weight]
+                                    if weight else 1})
+            # Choose the label with the highest frecuency. If more than 1 label
+            # has the highest frecuency choose one randomly.
+            max_freq = max(label_freq.values())
+            best_labels = [label for label, freq in label_freq.items()
+                           if freq == max_freq]
+            new_label = random.choice(best_labels)
+            labels[node] = new_label
+            # Continue until all nodes have a label that is better than other
+            # neighbour labels (only one label has max_freq for each node).
+            cont = cont or len(best_labels) > 1
+
+    # TODO In Python 3.3 or later, this should be `yield from ...`.
+    return iter(groups(labels).values())
+
 # find communities base on k-cliques
 # TODO: more community algos
 
@@ -90,7 +126,7 @@ def get_genre_tuple(genres):
 
 # Asynchronous LPA communities
 # print('asynchronous LPA communities')
-# lpa_comm = nx.asyn_lpa_communities(G)
+# lpa_comm = asyn_lpa_communities(G)
 
 # for currPart in lpa_comm:
 # 	artists = get_genre_of_artists(currPart)
@@ -98,47 +134,103 @@ def get_genre_tuple(genres):
 # print('-----------------------------')
 
 
-# Louvain algo
-louvain = []
+# # Louvain algo
+# louvain = []
 
-print('Louvain algo')
-partition = community.best_partition(G)
-partition_dict = {}
-for key in partition:
-	if partition[key] in partition_dict:
-		partition_dict[partition[key]].append(key)
-	else:
-		partition_dict[partition[key]] = []
-for part in partition_dict:
-	artists = get_genre_of_artists(partition_dict[part])
-	p = (len(partition_dict[part]), get_genre_tuple(artists))
-	print(p[0], p[1])
-	louvain.append(p)
-print('-----------------------------')
+# print('Louvain algo')
+# partition = community.best_partition(G)
+# partition_dict = {}
+# for key in partition:
+# 	if partition[key] in partition_dict:
+# 		partition_dict[partition[key]].append(key)
+# 	else:
+# 		partition_dict[partition[key]] = []
+# for part in partition_dict:
+# 	artists = get_genre_of_artists(partition_dict[part])
+# 	p = (len(partition_dict[part]), get_genre_tuple(artists))
+# 	print(p[0], p[1])
+# 	louvain.append(p)
+# print('-----------------------------')
+
+# kclique = []
+
+# # k-clique_communities
+# print('k-clique-communities')
+# k_cliques = list(nx.k_clique_communities(G,3))
+
+# for k_clique in k_cliques:
+# 	artists = get_genre_of_artists(k_clique)
+# 	p = (len(k_clique), get_genre_tuple(artists))
+# 	print(p[0], p[1])
+# 	kclique.append(p)
+# print('-----------------------------')
+
+# with open("graph_communities.txt", 'wb') as output:
+# 	output.write("louvain\n")
+# 	for c in louvain:
+# 		output.write(str(c) + "\n")
+# 	output.write("\nkclique\n")
+# 	for c in kclique:
+# 		output.write(str(c) + "\n")
+
 
 kclique = []
+louvain = []
+algo = ''
+f = open('graph_communities.txt', 'rb')
+for line in f:
+	if algo == '':
+		algo = 'louvain\n'
+	elif algo == 'louvain\n':
+		if line == 'kclique\n':
+			algo = 'kclique\n'
+		else:
+			line = line.replace('(', '').replace(')', '').replace('[', '').replace(']', '').replace(' ', '')[:-2].split(',')
+			line = filter(None, line)
+			line = [int(elem) for elem in line]
+			kclique.append(line)
+	elif algo == 'kclique\n':
+		line = line.replace('(', '').replace(')', '').replace('[', '').replace(']', '').replace(' ', '')[:-2].split(',')
+		line = filter(None, line)
+		line = [int(elem) for elem in line]
+		louvain.append(line)
 
-# k-clique_communities
-print('k-clique-communities')
-k_cliques = list(nx.k_clique_communities(G,3))
+kclique = kclique[:-1]
+print(louvain)
+print(kclique)
 
-for k_clique in k_cliques:
-	artists = get_genre_of_artists(k_clique)
-	p = (len(k_clique), get_genre_tuple(artists))
-	print(p[0], p[1])
-	kclique.append(p)
-print('-----------------------------')
+accuracy = []
+for tup in louvain:
+	if len(tup) > 2:
+		accuracy.append(tup[2]/(tup[0] - tup[1]))
+		print(accuracy)
+accuracy = sorted(accuracy, reverse = True)
+values = range(1, len(accuracy) + 1)
+plt.figure()
+plt.plot(values, accuracy, 'ro-') # in-degree
+plt.axis([1, len(accuracy), 0, 1])
+plt.legend(['In-degree','Out-degree'])
+plt.xlabel('Communitites')
+plt.ylabel('Accuracy')
+plt.title('Accuracy of Louvain-Communities')
+plt.savefig('spotify_acc_louvain.pdf')
+plt.close()
 
-with open("graph_communities.txt", 'wb') as output:
-	output.write("louvain\n")
-	for c in louvain:
-		output.write(str(c) + "\n")
-	output.write("\nkclique\n")
-	for c in kclique:
-		output.write(str(c) + "\n")
-
-
-
+accuracy = []
+for tup in kclique:
+	if len(tup) > 2:
+		accuracy.append(tup[2]/(tup[0] - tup[1]))
+accuracy = sorted(accuracy, reverse = True)
+values = range(1, len(accuracy) + 1)
+plt.figure()
+plt.plot(values, accuracy, 'ro-') # in-degree
+plt.axis([1, len(accuracy), 0, 1])
+plt.legend(['In-degree','Out-degree'])
+plt.xlabel('Communitites')
+plt.ylabel('Accuracy')
+plt.title('Accuracy of 2-Cliques-Communities')
+plt.savefig('spotify_acc_2-clique.pdf')
+plt.close()
 
 
 # dumb genre prediction per max count of genres in neighborhood
