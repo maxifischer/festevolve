@@ -24,28 +24,34 @@ def get_genre_of_artists(artist_list):
 	#req_string = req_string[:-1]
 	genres = {}
 	genres['null'] = 0
-	while len(artist_list) > 120:
-		r = requests.get(req_string, params={'ids': artist_list.keys()[0:120]}, auth = ())
-		artist_list = { curr_key: artist_list[curr_key] for curr_key in artist_list.keys()[120:-1] }	
+	# maximum 50 ids
+	artist_list = list(artist_list)
+	while len(artist_list) > 51:
+		for artist in artist_list[0:50]:
+			r = requests.get(req_string, params={'ids': artist}, auth = ())
+			#print(r.json())	
+			for artist in r.json()['artists']:
+				if len(artist['genres']) > 0:
+					for genre in artist['genres']:
+						if genre in genres:
+							genres[genre] += 1
+						else:
+							genres[genre] = 1
+				else:
+					genres['null'] += 1	
+		artist_list = artist_list[50:-1] 	
+	for artist in artist_list:
+		r = requests.get(req_string, params={'ids': artist}, auth = ())
+		#print(r.json())
 		for artist in r.json()['artists']:
-			if len(artist['genres']) != 0:
+			if len(artist['genres']) > 0:
 				for genre in artist['genres']:
 					if genre in genres:
 						genres[genre] += 1
 					else:
 						genres[genre] = 1
-				else:
-					genres['null'] += 1
-	r = requests.get(req_string, params={'ids': artist_list}, auth = ())
-	for artist in r.json()['artists']:
-		if len(artist['genres']) != 0:
-			for genre in artist['genres']:
-				if genre in genres:
-					genres[genre] += 1
-				else:
-					genres[genre] = 1
-		else:
-			genres['null'] += 1		
+			else:
+				genres['null'] += 1	
 	return genres
 
 def print_community(k_cliques):
@@ -60,30 +66,53 @@ def print_community(k_cliques):
 		print(genres)
 		print('-----------------------------')
 
+def print_genres(genres):
+	for genre in genres:
+		print(genre, genres[genre])
+	print('-----------------------------')
+
+# tuple consists of (null_values, max_genre1, max_genre2, max_genre3)
 def get_genre_tuple(genres):
-	# TODO: count null values
+	genre_list = []
 	null_genre = genres['null']
-	print(null_genre)
+	genre_list.append(null_genre)
 	del genres['null']
-	sorted_genres = sorted(genres, reverse = True)	
-	# TODO: count value of genres
+	sorted_genres = sorted(genres, key = lambda genre : genres[genre], reverse = True)
 	if len(sorted_genres) < 3:
-		print(sorted_genres)
+		genre_list.append(sorted_genres)
 	else:
-		print(sorted_genres[0:3])
-	# TODO: get count of all artists
+		for i in sorted_genres[:3]:
+			genre_list.append(genres[i])
+	return genre_list
 	
 
 # find communities base on k-cliques
 # TODO: more community algos
-# TODO: play with the parameter
-k_cliques = list(nx.k_clique_communities(G, 6))
-#partition = community.best_partition(G)
-#print_community(partition)
+
+# Louvain algo
+partition = community.best_partition(G)
+partition_dict = {}
+for key in partition:
+	if partition[key] in partition_dict:
+		partition_dict[partition[key]].append(key)
+	else:
+		partition_dict[partition[key]] = []
+for part in partition_dict:
+	artists = get_genre_of_artists(partition_dict[part])
+	print(len(partition_dict[part]), get_genre_tuple(artists))
+
+
+# k-clique_communities
+k_cliques = list(nx.k_clique_communities(G,2))
+
 for k_clique in k_cliques:
 	artists = get_genre_of_artists(k_clique)
-	get_genre_tuple(artists)
-#TODO: code cleanup
+	print(len(k_clique), get_genre_tuple(artists))
+
+
+
+
+
 
 # dumb genre prediction per max count of genres in neighborhood
 # queue = []
