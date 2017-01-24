@@ -42,9 +42,15 @@ The number of triangles is 913182. The average clustering coefficient is 0.2536.
 
 \section{Description of the algorithm}
 
-Ego-things here
+Our goal is the community detection in the graph to check the resulting communities against the genre distribution of the artists.
 
-Briefly describe in your own words the algorithm or the algorithm(s) you used in terms of input and output, which kind of network it applies to, and what is the main idea behind it (three sentences). Reference the algorithm (e.g.,\cite{zhao2007graph})
+Therefore we chose two algorithms: the Louvain-algorithm\cite{louvain} and the k-Clique-Communities\cite{kclique}. For the Louvain algorithm we chose the best_partition function and for the k-Clique-Communities k = 2 to get the maximum number of partitions.
+
+Briefly, the Louvain algorithms is a hierarchical clustering algorithm that greedy deletes edges that cause high modularity. In the resulting dendogram it chooses the best partition possible of the graph. The Louvain algorithm implementation takes a graph as an input and returns a dictionary with all nodes as keys and their community assignment as values. 
+
+The k-Clique-Communities algorithm looks for all cliques of size k reachable by adjacent k-cliques. It takes the graph as an input and returns a list of sets of nodes, so the communities.
+
+They are both usable on undirectional graphs.
 
 \section{Preprocessing and storing}
 
