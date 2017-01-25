@@ -199,38 +199,42 @@ kclique = kclique[:-1]
 print(louvain)
 print(kclique)
 
-accuracy = []
-for tup in louvain:
-	if len(tup) > 2:
-		accuracy.append(tup[2]/(tup[0] - tup[1]))
-		print(accuracy)
-accuracy = sorted(accuracy, reverse = True)
-values = range(1, len(accuracy) + 1)
-plt.figure()
-plt.plot(values, accuracy, 'ro-') # in-degree
-plt.axis([1, len(accuracy), 0, 1])
-plt.legend(['In-degree','Out-degree'])
-plt.xlabel('Communitites')
-plt.ylabel('Accuracy')
-plt.title('Accuracy of Louvain-Communities')
-plt.savefig('spotify_acc_louvain.pdf')
-plt.close()
+algos = ['louvain', 'kclique']
+for algostr in algos:
+	if algostr == 'louvain':
+		algo = louvain
+	else:
+		algo = kclique
+	
+	null_values = []
+	accuracy = []
+	for tup in algo:
+		if len(tup) > 2:
+			accuracy.append(tup[2]/(tup[0] - tup[1]))
+			null_values.append(tup[1])
+	accuracy = sorted(accuracy, reverse = True)
+	values = range(1, len(accuracy) + 1)
+	plt.figure()
+	plt.plot(values, accuracy, 'ro-') # in-degree
+	plt.axis([1, len(accuracy), 0, 1])
+	plt.legend(['In-degree','Out-degree'])
+	plt.xlabel('Communitites')
+	plt.ylabel('Accuracy')
+	plt.title('Accuracy of '+ algostr +'-Communities')
+	plt.savefig('spotify_acc_'+ algostr +'.pdf')
+	plt.close()
 
-accuracy = []
-for tup in kclique:
-	if len(tup) > 2:
-		accuracy.append(tup[2]/(tup[0] - tup[1]))
-accuracy = sorted(accuracy, reverse = True)
-values = range(1, len(accuracy) + 1)
-plt.figure()
-plt.plot(values, accuracy, 'ro-') # in-degree
-plt.axis([1, len(accuracy), 0, 1])
-plt.legend(['In-degree','Out-degree'])
-plt.xlabel('Communitites')
-plt.ylabel('Accuracy')
-plt.title('Accuracy of 2-Cliques-Communities')
-plt.savefig('spotify_acc_2-clique.pdf')
-plt.close()
+	null_values = sorted(null_values, reverse = True)
+	values = range(1, len(null_values) + 1)
+	plt.figure()
+	plt.plot(values, null_values, 'ro-') # in-degree
+	plt.axis([1, len(null_values), 0, max(null_values)])
+	plt.legend(['In-degree','Out-degree'])
+	plt.xlabel('Communitites')
+	plt.ylabel('Null Values')
+	plt.title('Null Values of '+ algostr +'-Communities')
+	plt.savefig('spotify_null_'+ algostr +'.pdf')
+	plt.close()
 
 
 # dumb genre prediction per max count of genres in neighborhood
