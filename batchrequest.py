@@ -18,23 +18,23 @@ class AuthFail(Exception):
 	pass
 
 def handle_request(response):
-    global responses
-    global requestcounter
-    global max_waittime
-    global need_reauth
-    responses.append(response)
-    requestcounter -= 1
+	global responses
+	global requestcounter
+	global max_waittime
+	global need_reauth
+	responses.append(response)
+	requestcounter -= 1
 
-    if response.code == 429:
-        waittime = int(response.headers["Retry-After"])
-        if waittime > max_waittime:
-            max_waittime = waittime
+	if response.code == 429:
+		waittime = int(response.headers["Retry-After"])
+		if waittime > max_waittime:
+			max_waittime = waittime
 
-    if response.code == 401:
-        need_reauth = True
+	if response.code == 401:
+		need_reauth = True
 
-    if requestcounter == 0:
-        ioloop.IOLoop.instance().stop()
+	if requestcounter == 0:
+		ioloop.IOLoop.instance().stop()
 
 def get(urls, params=False):
 	global requestcounter
@@ -63,15 +63,15 @@ def get(urls, params=False):
 	http_client = httpclient.AsyncHTTPClient()
 
 	for url in urls:
-	    requestcounter += 1
-        url_string = url
-        if params:
-            url_string = url[0] + "?"
-            for param in url[1]:
-                url_string += str(param) + "=" + url[1][param] + "&"
-            if url[1]:
-                url_string = url_string[:-1]
-	    http_client.fetch(httpclient.HTTPRequest(url_string,headers=headers), handle_request)
+		requestcounter += 1
+		url_string = url
+		if params:
+			url_string = url[0] + "?"
+			for param in url[1]:
+				url_string += str(param) + "=" + url[1][param] + "&"
+			if url[1]:
+				url_string = url_string[:-1]
+		http_client.fetch(httpclient.HTTPRequest(url_string,headers=headers), handle_request)
 	ioloop.IOLoop.instance().start()
 
 	return responses
@@ -95,18 +95,18 @@ def setCredentials(ID, secret):
 	clientsecret = secret
 
 def getWithParams(url, params):
-    global token
-    if token:
-    	headers = {"Authorization": "Bearer " + token}
-    r = requests.get(url, params=params, headers=headers)
+	global token
+	if token:
+		headers = {"Authorization": "Bearer " + token}
+	r = requests.get(url, params=params, headers=headers)
 
-    while r.status_code == 429:
-        waittime = int(r.headers["Retry-After"])
-        time.sleep(waittime)
-        r = requests.get(url, params=params, headers=headers)
+	while r.status_code == 429:
+		waittime = int(r.headers["Retry-After"])
+		time.sleep(waittime)
+		r = requests.get(url, params=params, headers=headers)
 
-    if r.status_code == 401:
-        getAuth()
-        r = requests.get(url, params=params, headers=headers)
+	if r.status_code == 401:
+		getAuth()
+		r = requests.get(url, params=params, headers=headers)
 
 	return r
