@@ -9,6 +9,21 @@ import progressbar
 import batchrequest
 import json
 import requests
+import ast
+
+def load_file(file, mode=None):
+	global folder_prefix
+
+	print "loading " + file
+	with open(folder_prefix + file) as f:
+		s = f.read()
+		if mode == 'json':
+			obj = json.loads(s)
+		else:
+			obj = ast.literal_eval(s)
+	return obj
+
+folder_prefix = 'graph_data/'
 
 class RequestException(Exception):
 	pass
@@ -17,6 +32,7 @@ maxsize = 20000
 batchsize = 200
 clientid = ""
 clientsecret = ""
+expand_mode=False
 
 try:
 	for i in range(1,len(sys.argv)):
@@ -29,6 +45,8 @@ try:
 			clientid = params[1]
 		elif params[0] == "clientsecret":
 			clientsecret = params[1]
+		elif params[0] == "expand_mode":
+			expand_mode = bool(params[1])
 except:
 	print "Error while reading parameters, using defaults"
 	maxsize = 20000
@@ -50,6 +68,15 @@ r = requests.get('https://api.spotify.com/v1/artists/' + artist_id)
 artists_info[artist_id] = r.json()
 
 count = 0
+
+if expand_mode:
+	print "entering expand mode, restoring state"
+	G = nx.read_adjlist(folder_prefix + "graph.txt")
+	artists_info = load_file("artist.json", 'json')
+	all_artists = load_file("all_artists.set")
+	pq = load_file("artist.deque")
+	count = len(all_artists)
+	print "state restored successfully"
 
 st = datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d %H:%M:%S')
 print(st)
@@ -112,7 +139,17 @@ print(len(all_artists))
 
 #file.write(json.dumps(H))
 #file.close()
-nx.write_adjlist(G, 'graph.txt')
+print "writing graph.txt"
+nx.write_adjlist(G, folder_prefix + 'graph.txt')
 
-with open('artist.json', 'w') as artist_json:
+print "writing artist.json"
+with open(folder_prefix + 'artist.json', 'w') as artist_json:
 	artist_json.write(json.dumps(artists_info))
+
+print "writing all_artists.set"
+with open(folder_prefix + 'all_artists.set') as f:
+	f.write(str(all_artists))
+
+print "writing artist.deque"
+with open(folder_prefix + 'artist.deque') as f:
+	f.write(str(pq))

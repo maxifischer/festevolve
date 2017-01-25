@@ -13,7 +13,18 @@ import matplotlib.pyplot as plt
 import operator
 import random
 import pickle
+import sys
 
+folder_prefix = "graph_data/"
+
+try:
+	for i in range(1,len(sys.argv)):
+		params = sys.argv[i].split("=", 1)
+		if params[0] == "graph_path":
+			folder_prefix = params[1]
+except:
+	print "Error while reading parameters, using defaults"
+	folder_prefix = "graph_data/"
 
 def get_genre_of_artists(artist_list):
 	# req_string = 'https://api.spotify.com/v1/artists'
@@ -118,9 +129,9 @@ def asyn_lpa_communities(G, weight=None):
     # TODO In Python 3.3 or later, this should be `yield from ...`.
     return iter(groups(labels).values())
 
-spotifygraph = nx.read_adjlist('graph.txt')
+spotifygraph = nx.read_adjlist(folder_prefix + 'graph.txt')
 artist_info = {}
-with open('artist.json', 'r') as f:
+with open(folder_prefix + 'artist.json', 'r') as f:
 	s = f.read()
 	artist_info = json.loads(s)
 
@@ -151,27 +162,27 @@ with open('artist.json', 'r') as f:
 #print(nx.average_clustering(spotifygraph))
 
 # Louvain algo
-profile = cProfile.Profile()
+# profile = cProfile.Profile()
 
-louvain = []
+# louvain = []
 
-print('Louvain algo')
-profile.enable()
-partition = community.best_partition(spotifygraph)
-partition_dict = {}
-for key in partition:
-	if partition[key] in partition_dict:
-		partition_dict[partition[key]].append(key)
-	else:
-		partition_dict[partition[key]] = []
-for part in partition_dict:
-	artists = get_genre_of_artists(partition_dict[part])
-	p = (len(partition_dict[part]), get_genre_tuple(artists))
-	print(p[0], p[1])
-	louvain.append(p)
-profile.create_stats()
-print('-----------------------------')
-profile.print_stats()
+# print('Louvain algo')
+# profile.enable()
+# partition = community.best_partition(spotifygraph)
+# partition_dict = {}
+# for key in partition:
+# 	if partition[key] in partition_dict:
+# 		partition_dict[partition[key]].append(key)
+# 	else:
+# 		partition_dict[partition[key]] = []
+# for part in partition_dict:
+# 	artists = get_genre_of_artists(partition_dict[part])
+# 	p = (len(partition_dict[part]), get_genre_tuple(artists))
+# 	print(p[0], p[1])
+# 	louvain.append(p)
+# profile.create_stats()
+# print('-----------------------------')
+# profile.print_stats()
 
 kclique = []
 
@@ -191,7 +202,7 @@ profile.create_stats()
 print('-----------------------------')
 profile.print_stats()
 
-with open("graph_communities.txt", 'wb') as output:
+with open(folder_prefix + "graph_communities.txt", 'wb') as output:
 	output.write("louvain\n")
 	for c in louvain:
 		output.write(str(c) + "\n")

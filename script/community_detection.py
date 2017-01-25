@@ -14,11 +14,13 @@ import community
 from collections import Counter
 import random
 
+folder_prefix = 'graph_data/'
+pdf_path = 'pdf/'
 
 #real data set
 #G = nx.read_adjlist('graph1000.txt')
 # small data set
-G = nx.read_adjlist('graph_report.txt')
+G = nx.read_adjlist(folder_prefix + 'graph_report.txt')
 # big data set
 #G = nx.read_adjlist('graph105315.txt')
 
@@ -177,7 +179,7 @@ def asyn_lpa_communities(G, weight=None):
 kclique = []
 louvain = []
 algo = ''
-f = open('graph_communities.txt', 'rb')
+f = open(folder_prefix + 'graph_communities.txt', 'rb')
 for line in f:
 	if algo == '':
 		algo = 'louvain\n'
@@ -221,7 +223,7 @@ for algostr in algos:
 	plt.xlabel('Communitites')
 	plt.ylabel('Accuracy')
 	plt.title('Accuracy of '+ algostr +'-Communities')
-	plt.savefig('spotify_acc_'+ algostr +'.pdf')
+	plt.savefig(pdf_path + 'spotify_acc_'+ algostr +'.pdf')
 	plt.close()
 
 	null_values = sorted(null_values, reverse = True)
@@ -233,7 +235,7 @@ for algostr in algos:
 	plt.xlabel('Communitites')
 	plt.ylabel('Null Values')
 	plt.title('Null Values of '+ algostr +'-Communities')
-	plt.savefig('spotify_null_'+ algostr +'.pdf')
+	plt.savefig(pdf_path + 'spotify_null_'+ algostr +'.pdf')
 	plt.close()
 
 
