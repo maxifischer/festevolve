@@ -42,9 +42,7 @@ The number of triangles is 913182. The average clustering coefficient is 0.2536.
 
 \section{Description of the algorithm}
 
-Our goal is the community detection in the graph to check the resulting communities against the genre distribution of the artists.
-
-Therefore we chose two algorithms: the Louvain-algorithm\cite{louvain} and the k-Clique-Communities\cite{kclique}. For the Louvain algorithm we chose the best_partition function and for the k-Clique-Communities k = 2 to get the maximum number of partitions.
+We chose two community detection algorithms: the Louvain-algorithm\cite{louvain} and the k-Clique-Communities\cite{kclique}. For the Louvain algorithm we chose the bestpartition function and for the k-Clique-Communities k = 2 to get the maximum number of partitions.
 
 Briefly, the Louvain algorithms is a hierarchical clustering algorithm that greedy deletes edges that cause high modularity. In the resulting dendogram it chooses the best partition possible of the graph. The Louvain algorithm implementation takes a graph as an input and returns a dictionary with all nodes as keys and their community assignment as values. 
 
@@ -61,16 +59,36 @@ The nodes are named by the artists id on spotify, which is returned by the API.
 Report all the preprocessing steps to obtain the final network. How do you store the data (graph database, main memory, disk)? In which format? Did you have to remove some information in order to clean the data? 
 
 \section{Network analysis}
+Our goal was the community detection in the graph to check the resulting communities against the genre distribution of the artists. We wanted to evaluate which community detection algorithm obtains the best genre-consistent communities. That knowledge is useful to find anomalies in the existing genre assignment and to predict the genre of an artist in the same community. Genre Prediction of songs is a complex research topic in Music Information Retrieval. By using the existing assignment of the Spotify artist relations, we can simplify this prediction.
+
+At first, we calculated the communities with the given algorithms. We analysed the number of artists, null values (artists without an assigned genre) and the genre distribution in a community.
 
 In this section, explain thoroughly the steps of the analysis you performed and give a motivation for such an analysis (e.g. discovering the most influential node, finding interesting patterns, analyzing communities). Elaborate on why you find it challenging and useful. Report possible applications.  
 
 \subsection{Qualitative Results}
 
-Comment the results of the analysis. You should also mention all the relevant details of your analysis, for instance specific values for parameters you used. It is preferable that you show some graphics and present some examples. If you use a visualization method to depict the nodes of the graph, make sure that you can explain at least a part of the network in the plot. 
+We looked at the accuracy of the calculated communities by the algorithms. The accuracy is the number of the most present genre in the community divided by all artists in the community without artists with no genre. The goal is to get informations about the genre consistency of a community. If every artist of a community is part of the most frequent genre, you can say that the whole community is part of this genre.
 
-For instance for node classification, show some of the classified vertices. If you have a ground truth, compare it to your results. You can also show a use case by running the algorithm on a smaller network (like the Star Wars network) and show what you find. 
+\includegraphics[scale=0.4]{spotify_acc_louvain.pdf}
 
-For a graph query, show how the algorithm behaves with particular patterns (stars, triangles, cores ...).  Is the algorithm producing useful and interpretable results? Are the results unexpected or is it something you can find by yourself? Is there some anomaly?
+In the result of the Louvain algorithm most of the communities are relatively high, so that the communities are pretty consistent.
+
+\includegraphics[scale=0.4]{spotify_acc_kclique.pdf}
+
+In comparison the k-Clique-Communities algorithm with k = 2 has many communities with mixed genres. For this use case the detected communities are not very useful.
+
+Then we analysed the number of null values in all calculated communities. We want to find out how much artists have no genre and can be predicted.
+
+\includegraphics[scale=0.4]{spotify_null_kclique.pdf}
+
+\includegraphics[scale=0.4]{spotify_null_louvain.pdf}
+
+We chose thresholds to predict in how much communities it is useful to predict genres of null_values. The accuracy threshold was 75\%, the null values threshold (number of null values divided by the total number) was 25\%. The accuracy threshold should ensure that there are enough deciding reference points for the prediction while the null values threshold cuts the communities that try to predict too much genres of null values which become much more unclear with more null values. We cut communities with no null values too, because you cannot predict any genres in them.
+
+In the graphics you see the thresholded communities of both algorithms. While Louvain calculated more than 20 communities where you can predict the new genres, 2-Clique-Communities just found 4 communities.
+
+As you may see the Louvain algorithm works much better in that use case. In general it calculates bigger communities that seem to map better on the general genre distribution. 
+
 
 \subsection{Time and scalability}
 

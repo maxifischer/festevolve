@@ -13,6 +13,7 @@ import pickle
 import community
 from collections import Counter
 import random
+import numpy as np
 
 
 #real data set
@@ -206,35 +207,69 @@ for algostr in algos:
 	else:
 		algo = kclique
 	
-	null_values = []
+	null_values = {}
 	accuracy = []
 	for tup in algo:
 		if len(tup) > 2:
-			accuracy.append(tup[2]/(tup[0] - tup[1]))
-			null_values.append(tup[1])
+			acc = tup[2]/(tup[0] - tup[1])
+			accuracy.append(acc)
+			if acc not in null_values.keys():
+				null_values[acc] = []
+			null_values[acc].append(tup[1]/tup[0])
 	accuracy = sorted(accuracy, reverse = True)
 	values = range(1, len(accuracy) + 1)
+	null_vals = []
+	accu = set(accuracy)
+	for acc in accu:
+		null_vals += sorted(null_values[acc], reverse = True)
+
 	plt.figure()
 	plt.plot(values, accuracy, 'ro-') # in-degree
 	plt.axis([1, len(accuracy), 0, 1])
-	plt.legend(['In-degree','Out-degree'])
+#	plt.legend(['In-degree','Out-degree'])
 	plt.xlabel('Communitites')
 	plt.ylabel('Accuracy')
 	plt.title('Accuracy of '+ algostr +'-Communities')
 	plt.savefig('spotify_acc_'+ algostr +'.pdf')
 	plt.close()
 
-	null_values = sorted(null_values, reverse = True)
-	values = range(1, len(null_values) + 1)
+	for i in range(len(accuracy) - 1, 0, -1):
+		if accuracy[i] >= 0.75:
+			accuracy = accuracy[:(i + 1)]
+			null_vals = null_vals[:(i + 1)]
+			break
+	to_delete = []
+	for j in range(len(null_vals)):
+		if null_vals[j] > 0.25 or null_vals[j] == 0.0:
+			to_delete.append(j)
+	to_delete = sorted(to_delete, reverse = True)
+	for ind in to_delete:
+		del null_vals[ind]
+		del accuracy[ind]
+
+	values = range(1, len(accuracy) + 1)
+
 	plt.figure()
-	plt.plot(values, null_values, 'ro-') # in-degree
-	plt.axis([1, len(null_values), 0, max(null_values)])
-	plt.legend(['In-degree','Out-degree'])
+	plt.plot(values, accuracy, 'ro-', values, null_vals, 'bo-') # in-degree
+	plt.axis([1, len(accuracy), 0, 1])
+	plt.legend(['Accuracy','Null values'])
 	plt.xlabel('Communitites')
 	plt.ylabel('Null Values')
 	plt.title('Null Values of '+ algostr +'-Communities')
 	plt.savefig('spotify_null_'+ algostr +'.pdf')
 	plt.close()
+
+# null_values = sorted(null_values, reverse = True)
+# values = range(1, len(null_values) + 1)
+# plt.figure()
+# plt.plot(values, null_values, 'ro-') # in-degree
+# plt.axis([1, len(null_values), 0, max(null_values)])
+# plt.legend(['In-degree','Out-degree'])
+# plt.xlabel('Communitites')
+# plt.ylabel('Null Values')
+# plt.title('Null Values of '+ algostr +'-Communities')
+# plt.savefig('spotify_null_'+ algostr +'.pdf')
+# plt.close()
 
 
 # dumb genre prediction per max count of genres in neighborhood
