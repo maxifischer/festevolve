@@ -12,7 +12,7 @@
 
 %\institute{}
 
-\date{Due date: 24 January 2017}
+\date{Due date: 26 January 2017}
 
 \author{
 Maxi Fischer, S\"oren Tietb\"ohl\\ 
@@ -33,12 +33,12 @@ Analysis of the Spotify Artist Network using an ego-based community detection al
 
 Spotify is a music streaming platform, hosting over 30 million songs and more than 2 million artists. The artists are associated with each other via the 'related artists' feature. This relation induces a graph, which is the subject of this project.
 
-Because the related artists have to be queried one-by-one from the Spotify API we are only using a subset of the complete graph. Our subgraph is constructed by starting at an arbitrary artist (we chose the "Red Hot Chili Peppers") and then using breadth first traversal. The total number of nodes in the subgraph is 50992, the number of edges is 179425. The 'related artist' relation goes both ways, so its an undirected graph. We can assume that in reality the graph is dynamic, because new songs and thus artists will be added all the time. The nodes are not labelled, but various information on the artist relation can be requested, such as genre and popularity.
+Because the related artists have to be queried one-by-one from the Spotify API we are only using a subset of the complete graph. Our subgraph is constructed by starting at an arbitrary artist (we chose the "Red Hot Chili Peppers") and then using breadth first traversal. The total number of nodes in the subgraph is 43907, the number of edges is 172350. The 'related artist' relation goes both ways, so its an undirected graph. We can assume that in reality the graph is dynamic, because new songs and thus artists will be added all the time. The nodes are not labelled, but various information on the artist relation can be requested, such as genre and popularity.
 
 Degree Distribution: 
 \includegraphics[scale=0.4]{spotify_degree_distribution.pdf}
 
-The number of triangles is 913182. The average clustering coefficient is 0.2536.
+The number of triangles is 1105986. The average clustering coefficient is 0.2522.
 
 \section{Description of the algorithm}
 
@@ -60,14 +60,10 @@ The graph is then written to disk as an adjacency list in plain text. The artist
 
 Before the algorithms are run, they will load all the stored information into main memory. This is done to save time, as rebuilding the graph via API takes a long time.
 
-Report all the preprocessing steps to obtain the final network. How do you store the data (graph database, main memory, disk)? In which format? Did you have to remove some information in order to clean the data? 
-
 \section{Network analysis}
 Our goal was the community detection in the graph to check the resulting communities against the genre distribution of the artists. We wanted to evaluate which community detection algorithm obtains the best genre-consistent communities. That knowledge is useful to find anomalies in the existing genre assignment and to predict the genre of an artist in the same community. Genre Prediction of songs is a complex research topic in Music Information Retrieval. By using the existing assignment of the Spotify artist relations, we can simplify this prediction.
 
-At first, we calculated the communities with the given algorithms. We analysed the number of artists, null values (artists without an assigned genre) and the genre distribution in a community.
-
-In this section, explain thoroughly the steps of the analysis you performed and give a motivation for such an analysis (e.g. discovering the most influential node, finding interesting patterns, analyzing communities). Elaborate on why you find it challenging and useful. Report possible applications.  
+After calculating the communities with the given algorithms, we analysed the number of artists, null values (artists without an assigned genre) and the genre distribution in a community.
 
 \subsection{Qualitative Results}
 
@@ -89,9 +85,9 @@ Then we analysed the number of null values in all calculated communities. We wan
 
 We chose thresholds to predict in how much communities it is useful to predict genres of null_values. The accuracy threshold was 75\%, the null values threshold (number of null values divided by the total number) was 25\%. The accuracy threshold should ensure that there are enough deciding reference points for the prediction while the null values threshold cuts the communities that try to predict too much genres of null values which become much more unclear with more null values. We cut communities with no null values too, because you cannot predict any genres in them.
 
-In the graphics you see the thresholded communities of both algorithms. While Louvain calculated more than 20 communities where you can predict the new genres, 2-Clique-Communities just found 4 communities.
+In the graphics you see the thresholded communities of both algorithms. While Louvain calculated more than 30 communities where you can predict the new genres, 2-Clique-Communities just found 7 communities.
 
-As you may see the Louvain algorithm works much better in that use case. In general it calculates bigger communities that seem to map better on the general genre distribution. 
+As you may see the Louvain algorithm works much better in that use case. In general it calculates bigger communities that seem to map better on the general genre distribution.
 
 
 \subsection{Time and scalability}
@@ -106,19 +102,22 @@ The artist information has a size of 39 MB, the graph adjacency list has a size 
 
 The Louvain-algorithm completed in 35.6 seconds.
 
+
 The k-Clique-communitys completed in 92.7 seconds.
 
-Evaluate the used method regarding its run time and scalability. Report the time you need to preprocess  the data (if there is such a phase, like an index construction) and to produce the results. On the same network and algorithm, consider incremental graph sizes (e.g. 10\% of the network, 30\%, etc.). 
+Evaluate the used method regarding its run time and scalability. Report the time you need to preprocess the data (if there is such a phase, like an index construction) and to produce the results. On the same network and algorithm, consider incremental graph sizes (e.g. 10\% of the network, 30\%, etc.). 
 
 \smallskip
 \noindent Alternatively, generate some random network with \url{http://www.cse.ust.hk/graphgen/} or any other graph generator and compare the results of the algorithm between the two graphs (the original one and the random one). Are there any important differences in the outcome? Specify the parameters of the graph generator of choice. 
 
-
-\subsection{[Optional] Memory usage}
-Report how much memory is consumed by the algorithm. 
-
-
 \section{Limitations and interesting findings}
+By using only the Spotify API we forced some limitations on us. The graph creation speed depended on the rate limiting of the API when creating the graph and the internet connection. In addition our findings are strongly limited by the quality of the "related artists" relation. In the case Spotify has another understanding of related artists, they may cause edges that are not intended in our graph. Another point we haven't yet considered is that you can have multiple quite similar genre labels for one artist and hierarchical connection between genres. For example \"Alternative Rock\" is a subset of \"Rock\". With our approach we would just predict \"Rock\", not considering subsets.
+
+The Louvain algorithm has a general runtime in O(n log n) so that it should scale quite good for bigger graphs.
+
+The k-Cliques Communities algorithm may scale worse. It depends on finding k-Cliques in a network which may have an exponential runtime. In most applications the algorithm is still relatively fast, especially in a rather sparse graph like ours.
+
+Our findings may help to improve the Spotify API and the general genre prediction of artists in other applications, like artist pages in Wikipedia.
 
 Did you notice any limitation in the approach? Does it work as expected regarding the quality of the results? In terms of performance, is it too slow when the network is too big? Is it domain dependent or applicable to various types of graphs? To which kind of users are the results of the analysis useful? Describe what you have learned and propose ideas on how the analysis could improved. 
 
