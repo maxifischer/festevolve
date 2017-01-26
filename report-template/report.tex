@@ -53,8 +53,12 @@ They are both usable on undirectional graphs.
 \section{Preprocessing and storing}
 
 In order to obtain the graph we queried the Spotify API at \cite{spotifyapi}. The related artist query returns 20 artists that are related to the given input artist.
-From there we continued with breadth first traversal and queried the API for all the new artists. The graph is stored directly in main memory using python with networkx.
+From there we continued with breadth first traversal and queried the API for all the new artists.
 The nodes are named by the artists id on spotify, which is returned by the API.
+Additionally we also store all the artist related information (e.g. genre, popularity etc) in a dictionary that maps from artist id to artist info.
+The graph is then written to disk as an adjacency list in plain text. The artist information is stored in json format.
+
+Before the algorithms are run, they will load all the stored information into main memory. This is done to save time, as rebuilding the graph via API takes a long time.
 
 Report all the preprocessing steps to obtain the final network. How do you store the data (graph database, main memory, disk)? In which format? Did you have to remove some information in order to clean the data? 
 
@@ -91,6 +95,18 @@ As you may see the Louvain algorithm works much better in that use case. In gene
 
 
 \subsection{Time and scalability}
+
+\subsubsection*{Building the Graph}
+
+The total amount of time it took to build the graph is 14 minutes 3 seconds. This includes querying the spotify API for related artists and then storing all the information in the respective data structures.
+
+The artist information has a size of 39 MB, the graph adjacency list has a size of 4.8 MB.
+
+\subsubsection*{Running the algorithms}
+
+The Louvain-algorithm completed in 35.6 seconds.
+
+The k-Clique-communitys completed in 92.7 seconds.
 
 Evaluate the used method regarding its run time and scalability. Report the time you need to preprocess  the data (if there is such a phase, like an index construction) and to produce the results. On the same network and algorithm, consider incremental graph sizes (e.g. 10\% of the network, 30\%, etc.). 
 

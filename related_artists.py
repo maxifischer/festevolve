@@ -79,14 +79,12 @@ try:
 			# reconstuct the artist from the url
 			currentArtist = response.request.url.split('/')[-2] # -2 means second-last element
 
-			if response.code == 429 or response.code == 401:
+			if response.code == 429 or response.code == 401 or response.code == 599:
 				pq.append(currentArtist)
 				continue
 			elif response.code != 200:
 				raise RequestException({"code": response.code, "reason": response.reason})
-
 			count += 1
-			
 			rjson = json.loads(response.body)
 			for artist in rjson['artists']:
 				if artist['id'] not in all_artists:
@@ -94,7 +92,6 @@ try:
 					artists_info[artist['id']] = artist
 					pq.append(artist['id'])		
 					G.add_node(artist['id'])
-					fetch_artist_info += artist['id'] + ","
 				G.add_edge(currentArtist, artist['id'])
 		progressbar.redraw(count, maxsize, 30)
 
@@ -117,5 +114,5 @@ print(len(all_artists))
 #file.close()
 nx.write_adjlist(G, 'graph.txt')
 
-with open('artist.txt', 'wb') as artist_file:
-	artist_file.write(str(artists_info))
+with open('artist.json', 'w') as artist_json:
+	artist_json.write(json.dumps(artists_info))
