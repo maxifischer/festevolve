@@ -35,8 +35,11 @@ Spotify is a music streaming platform, hosting over 30 million songs and more th
 
 Because the related artists have to be queried one-by-one from the Spotify API we are only using a subset of the complete graph. Our subgraph is constructed by starting at an arbitrary artist (we chose the "Red Hot Chili Peppers") and then using breadth first traversal. The total number of nodes in the subgraph is 43907, the number of edges is 172350. The 'related artist' relation goes both ways, so its an undirected graph. We can assume that in reality the graph is dynamic, because new songs and thus artists will be added all the time. The nodes are not labelled, but various information on the artist relation can be requested, such as genre and popularity.
 
-Degree Distribution: 
+\begin{figure}[H]
+\centering
 \includegraphics[scale=0.4]{spotify_degree_distribution.pdf}
+\caption{Degree Distribution}
+\end{figure}
 
 The number of triangles is 1105986. The average clustering coefficient is 0.2522.
 
@@ -46,14 +49,14 @@ We chose two community detection algorithms: the Louvain-algorithm\cite{louvain}
 
 Briefly, the Louvain algorithms is a hierarchical clustering algorithm that greedy deletes edges that cause high modularity. In the resulting dendogram it chooses the best partition possible of the graph. The Louvain algorithm implementation takes a graph as an input and returns a dictionary with all nodes as keys and their community assignment as values. 
 
-The k-Clique-Communities algorithm looks for all cliques of size k reachable by adjacent k-cliques. It takes the graph as an input and returns a list of sets of nodes, so the communities.
+The k-Clique-Communities algorithm looks for all cliques of size k reachable by adjacent k-cliques. It takes the graph as an input and returns a list of sets of nodes, each set is a community.
 
 They are both usable on undirectional graphs.
 
 \section{Preprocessing and storing}
 
-In order to obtain the graph we queried the Spotify API at \cite{spotifyapi}. The related artist query returns 20 artists that are related to the given input artist.
-From there we continued with breadth first traversal and queried the API for all the new artists.
+In order to obtain the graph we query the Spotify API at \cite{spotifyapi}. The related artist query returns 20 artists that are related to the given input artist.
+From there we continue with breadth first traversal and query the API for all the new artists.
 The nodes are named by the artists id on spotify, which is returned by the API.
 Additionally we also store all the artist related information (e.g. genre, popularity etc) in a dictionary that maps from artist id to artist info.
 The graph is then written to disk as an adjacency list in plain text. The artist information is stored in json format.
@@ -61,31 +64,43 @@ The graph is then written to disk as an adjacency list in plain text. The artist
 Before the algorithms are run, they will load all the stored information into main memory. This is done to save time, as rebuilding the graph via API takes a long time.
 
 \section{Network analysis}
-Our goal was the community detection in the graph to check the resulting communities against the genre distribution of the artists. We wanted to evaluate which community detection algorithm obtains the best genre-consistent communities. That knowledge is useful to find anomalies in the existing genre assignment and to predict the genre of an artist in the same community. Genre Prediction of songs is a complex research topic in Music Information Retrieval. By using the existing assignment of the Spotify artist relations, we can simplify this prediction.
+Our goal is to detect communities in the graph and then compare the resulting communities with the genre distribution of the artists. We want to evaluate which community detection algorithm obtains the best genre-consistent communities. That knowledge is useful to find anomalies in the existing genre assignment and to predict the genre of an artist in the same community. Genre prediction of songs is a complex research topic in Music Information Retrieval. By using the existing assignment of the Spotify artist relations, we can simplify this prediction.
 
-After calculating the communities with the given algorithms, we analysed the number of artists, null values (artists without an assigned genre) and the genre distribution in a community.
+After calculating the communities with the given algorithms, we analyse the number of artists, null values (artists without an assigned genre) and the genre distribution in a community.
 
 \subsection{Qualitative Results}
 
-We looked at the accuracy of the calculated communities by the algorithms. The accuracy is the number of the most present genre in the community divided by all artists in the community without artists with no genre. The goal is to get informations about the genre consistency of a community. If every artist of a community is part of the most frequent genre, you can say that the whole community is part of this genre.
+We look at the accuracy of the calculated communities by the algorithms. The accuracy is the number of the most present genre in the community divided by all artists in the community without artists with no genre. The goal is to get informations about the genre consistency of a community. If every artist of a community is part of the most frequent genre, you can say that the whole community is part of this genre.
 
+\begin{figure}[H]
+\centering
 \includegraphics[scale=0.4]{spotify_acc_louvain.pdf}
+\caption{Accuracy of Louvain-communities}
+\end{figure}
 
 In the result of the Louvain algorithm most of the communities are relatively high, so that the communities are pretty consistent.
 
+\begin{figure}[H]
+\centering
 \includegraphics[scale=0.4]{spotify_acc_kclique.pdf}
+\caption{Accuracy of kclique-communities}
+\end{figure}
 
-In comparison the k-Clique-Communities algorithm with k = 2 has many communities with mixed genres. For this use case the detected communities are not very useful.
+In comparison the k-Clique-Communities algorithm with k = 2 produces a lot of communities with mixed genres. For this use case the detected communities are not very useful.
 
-Then we analysed the number of null values in all calculated communities. We want to find out how much artists have no genre and can be predicted.
+Now we analyse the number of null values in all calculated communities. We want to find out how much artists have no genre and can be predicted.
 
-\includegraphics[scale=0.4]{spotify_null_kclique.pdf}
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.49\linewidth]{spotify_null_kclique.pdf}
+\includegraphics[width=0.49\linewidth]{spotify_null_louvain.pdf}
+\caption{Null value data of kclique (left) and louvain (right)}
+\label{fig:nullvalues}
+\end{figure}
 
-\includegraphics[scale=0.4]{spotify_null_louvain.pdf}
+We chose thresholds to select communities for which it is sensible to predict genres of null\_values. The accuracy threshold is 75\%, the null values threshold (number of null values divided by the total number) is 25\%. The accuracy threshold should ensure that there are enough deciding reference points for the prediction, while the null values threshold cuts the communities which contain a lot of null values. The more null values there are , the less meaningful a prediction will be. We cut communities with no null values too, because you cannot predict any genres in them.
 
-We chose thresholds to predict in how much communities it is useful to predict genres of null_values. The accuracy threshold was 75\%, the null values threshold (number of null values divided by the total number) was 25\%. The accuracy threshold should ensure that there are enough deciding reference points for the prediction while the null values threshold cuts the communities that try to predict too much genres of null values which become much more unclear with more null values. We cut communities with no null values too, because you cannot predict any genres in them.
-
-In the graphics you see the thresholded communities of both algorithms. While Louvain calculated more than 30 communities where you can predict the new genres, 2-Clique-Communities just found 7 communities.
+In Figure \ref{fig:nullvalues} you see the thresholded communities of both algorithms. While Louvain calculated more than 30 communities where you can predict the new genres, 2-Clique-Communities just found 7 communities.
 
 As you may see the Louvain algorithm works much better in that use case. In general it calculates bigger communities that seem to map better on the general genre distribution.
 
@@ -102,24 +117,18 @@ The artist information has a size of 39 MB, the graph adjacency list has a size 
 
 The Louvain-algorithm completed in 35.6 seconds.
 
+The k-Clique-communities completed in 92.7 seconds.
 
-The k-Clique-communitys completed in 92.7 seconds.
-
-Evaluate the used method regarding its run time and scalability. Report the time you need to preprocess the data (if there is such a phase, like an index construction) and to produce the results. On the same network and algorithm, consider incremental graph sizes (e.g. 10\% of the network, 30\%, etc.). 
-
-\smallskip
-\noindent Alternatively, generate some random network with \url{http://www.cse.ust.hk/graphgen/} or any other graph generator and compare the results of the algorithm between the two graphs (the original one and the random one). Are there any important differences in the outcome? Specify the parameters of the graph generator of choice. 
+For comparison we ran the algorithms on a larger subset of the spotify graph which had 176417 Nodes. On this graph the Louvain-algorithm completed in 199.3s. The kclique algorithm did not complete because our machine did not have enough memory.(We used a small Debian VM with 1 GB RAM)
 
 \section{Limitations and interesting findings}
-By using only the Spotify API we forced some limitations on us. The graph creation speed depended on the rate limiting of the API when creating the graph and the internet connection. In addition our findings are strongly limited by the quality of the "related artists" relation. In the case Spotify has another understanding of related artists, they may cause edges that are not intended in our graph. Another point we haven't yet considered is that you can have multiple quite similar genre labels for one artist and hierarchical connection between genres. For example \"Alternative Rock\" is a subset of \"Rock\". With our approach we would just predict \"Rock\", not considering subsets.
+Using the Spotify API resulted in some limitations. The graph creation speed depends on the rate limiting of the API and the internet connection. Additionally our findings are strongly limited by the quality of the "related artists" relation. In the case that Spotify has a different understanding of related artists, they could create edges that are not in any way associated with genre, thus distorting our results. Another point we have not yet considered is that you can have multiple quite similar genre labels for one artist and hierarchical connection between genres. For example \"Alternative Rock\" is a subset of \"Rock\". With our approach we would just predict \"Rock\", not considering subsets.
 
 The Louvain algorithm has a general runtime in O(n log n) so that it should scale quite good for bigger graphs.
 
 The k-Cliques Communities algorithm may scale worse. It depends on finding k-Cliques in a network which may have an exponential runtime. In most applications the algorithm is still relatively fast, especially in a rather sparse graph like ours.
 
 Our findings may help to improve the Spotify API and the general genre prediction of artists in other applications, like artist pages in Wikipedia.
-
-Did you notice any limitation in the approach? Does it work as expected regarding the quality of the results? In terms of performance, is it too slow when the network is too big? Is it domain dependent or applicable to various types of graphs? To which kind of users are the results of the analysis useful? Describe what you have learned and propose ideas on how the analysis could improved. 
 
 
 
